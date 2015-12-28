@@ -1,0 +1,4 @@
+test:
+  override:
+    - gulp test
+    - gulp test --jvmAgent
