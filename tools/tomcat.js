@@ -12,6 +12,7 @@ var p = require('../package.json'),
   path = require('path'),
   gutil = require('gulp-util'),
   xml2js = require('xml2js'),
+  tty = require('tty'),
   ProgressBar = require('progress');
 
 module.exports = (function() {
@@ -214,7 +215,7 @@ module.exports = (function() {
         var downloader = url.match(/^https/) ? https : http;
         downloader.get(url, function(response) {
             if (response.statusCode != 200) {
-                console.log(gutil.colors.red("Error while fetching " + url + ": " + response.statusMessage + " (" + response.statusCode + ")"));
+                gutil.log(gutil.colors.red("Error while fetching " + url + ": " + response.statusMessage + " (" + response.statusCode + ")"));
                 done();
             }
             createProgressBar(label, response);
@@ -231,17 +232,20 @@ module.exports = (function() {
 
     function createProgressBar(what,response) {
         var len = parseInt(response.headers['content-length'], 10);
-        var bar = new ProgressBar('  Downloading ' + what + ' [:bar] :percent :etas', {
-            complete:   '=',
-            incomplete: ' ',
-            width:      40,
-            total:      len
-        });
-        response
-          .on('data',function (chunk) {
-              bar.tick(chunk.length);
-          });
-        return bar
+        if (tty.isatty(process.stdout.fd)) {
+            var bar = new ProgressBar('  Downloading ' + what + ' [:bar] :percent :etas', {
+                complete:   '=',
+                incomplete: ' ',
+                width:      40,
+                total:      len
+            });
+            response
+              .on('data',function (chunk) {
+                  bar.tick(chunk.length);
+              });
+        } else {
+            gutil.log("Downloading " + what);
+        }
     }
 
     function fileExists(path) {
