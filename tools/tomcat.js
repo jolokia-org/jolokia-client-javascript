@@ -232,7 +232,7 @@ module.exports = (function() {
 
     function createProgressBar(what,response) {
         var len = parseInt(response.headers['content-length'], 10);
-        if (tty.isatty(process.stdout.fd)) {
+        if (tty.isatty(process.stdout.fd) && !process.env.CI) {
             var bar = new ProgressBar('  Downloading ' + what + ' [:bar] :percent :etas', {
                 complete:   '=',
                 incomplete: ' ',
