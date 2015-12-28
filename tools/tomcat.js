@@ -4,12 +4,14 @@ var p = require('../package.json'),
   rimraf = require('rimraf'),
   fs = require('fs'),
   http = require('http'),
+  https = require('https'),
   tar = require('tar-fs'),
   gunzip = require('gunzip-maybe'),
   process = require('process'),
   child_process = require('child_process'),
   path = require('path'),
   gutil = require('gulp-util'),
+  xml2js = require('xml2js'),
   ProgressBar = require('progress');
 
 module.exports = (function() {
@@ -156,8 +158,9 @@ module.exports = (function() {
         }
         var repo = getMavenRepoPath();
         var artifact = coords[2] + "-" + coords[3] + (coords[4] ? "-" + coords[4] : "") + "." + extension;
-        var artifactLocation =
-          coords[1].replace(".", "/") + "/" + coords[2] + "/" + coords[3] + "/" + artifact;
+        var artifactLocationDir =
+          coords[1].replace(".", "/") + "/" + coords[2] + "/" + coords[3];
+        var artifactLocation = artifactLocationDir + "/" + artifact;
         var path = repo + "/" + artifactLocation;
         if (fileExists(path)) {
             // Use local artifact
@@ -169,25 +172,61 @@ module.exports = (function() {
               })
               .pipe(fs.createWriteStream(destPath));
         } else {
-            // Download
-            var baseUrl = coords[3].match(/SNAPSHOT/) ? mavenCentralSnapshotRepo : mavenCentralRepo;
-            var url = baseUrl + "/" + artifactLocation;
-            http.get(url, function(response) {
-                if (response.statusCode != 200) {
-                    console.log(gutil.colors.red("Error while fetching " + url + ": " + response.statusMessage + " (" + response.statusCode + ")"));
-                    done();
-                }
-                createProgressBar(artifact, response);
-                response
-                  .on('end', function () {
-                      done();
-                  })
-                  .pipe(fs.createWriteStream(destPath));
-            }).on('error', function(e) {
-                console.log(gutil.colors.red("Got HTTP error while fetching " + baseUrl + "/" + artifactLocation + ": " + e.message));
-                done();
-            });
+            // Download artifact or snapshot
+            if (coords[3].match(/SNAPSHOT/)) {
+                var metaUrl = mavenCentralSnapshotRepo + "/" + artifactLocationDir + "/maven-metadata.xml";
+                https.get(metaUrl, function(res) {
+                    var xml = '';
+
+                    res.on('data', function(chunk) {
+                        xml += chunk;
+                    });
+
+                    res.on('error', function(e) {
+                        throw new Error("Cannot read " + metaUrl + ": " + e);
+                    });
+
+                    res.on('timeout', function(e) {
+                        throw new Error("Timeout: Cannot read " + metaUrl + ": " + e);
+                    });
+
+                    res.on('end', function() {
+                        xml2js.parseString(xml, { explicitArray: false }, function(err, meta) {
+                            if (err) {
+                                throw new Error("Invalid XML at " + metaUrl + ": " + err);
+                            }
+                            var snapshot = meta.metadata.versioning.snapshot;
+                            var versionStem = coords[3].match(/^(.*)-SNAPSHOT$/)[1];
+                            var resolvedArtifact = coords[2] + "-" + versionStem + "-" +
+                                                   snapshot.timestamp + "-" + snapshot.buildNumber +
+                                                   (coords[4] ? "-" + coords[4] : "") + "." + extension;
+                            download(mavenCentralSnapshotRepo + "/" + artifactLocationDir + "/" + resolvedArtifact, artifact, destPath, done);
+                        });
+                    });
+                });
+            } else {
+                download(mavenCentralRepo + "/" + artifactLocation, artifact, destPath, done);
+            }
         }
+    }
+
+    function download(url, label, destPath, done) {
+        var downloader = url.match(/^https/) ? https : http;
+        downloader.get(url, function(response) {
+            if (response.statusCode != 200) {
+                console.log(gutil.colors.red("Error while fetching " + url + ": " + response.statusMessage + " (" + response.statusCode + ")"));
+                done();
+            }
+            createProgressBar(label, response);
+            response
+              .on('end', function () {
+                  done();
+              })
+              .pipe(fs.createWriteStream(destPath));
+        }).on('error', function(e) {
+            console.log(gutil.colors.red("Got HTTP error while fetching " + url + " : " + e.message));
+            done();
+        });
     }
 
     function createProgressBar(what,response) {
