@@ -86,7 +86,7 @@ gulp.task('qunit', [ 'supportLib' ], function() {
         base: "http://localhost:8080/jolokia-js/"
     }).pipe(qunit({
         'phantomjs-options': [ "--web-security=" + (options.jvmAgent ? "false" : "true") ],
-        timeout: 40
+        timeout: options.pollInterval ? options.pollInterval * 40 : 20
     }));
 });
 
