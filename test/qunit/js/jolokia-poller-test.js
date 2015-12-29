@@ -90,7 +90,7 @@ $(document).ready(function() {
             mbean: "java.lang:type=Memory",
             operation: "gc"
         });
-        var interval = 500;
+        var interval = 200;
         var deltaCheck = 250;
         j4p.start(interval);
         equal(j4p.jobs().length,2,"2 jobs registered");
