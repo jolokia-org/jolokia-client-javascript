@@ -238,8 +238,8 @@ $(document).ready(function() {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        var counterS = 1,
-            counterE = 1;
+        var counterS = 0,
+            counterE = 0;
         j4p.register({
                 success: function(resp) {
                     counterS++;
@@ -252,13 +252,15 @@ $(document).ready(function() {
             { type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
             { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
             { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
-        j4p.start(200);
         setTimeout(function() {
-            j4p.stop();
-            equal(counterS,5,"Req should be called 4 times successfully");
-            equal(counterE,3,"One error request, twice");
-            done();
-        },500);
+            j4p.start(200);
+            setTimeout(function () {
+                j4p.stop();
+                equal(counterS, 4, "Req should be called 4 times successfully");
+                equal(counterE, 2, "One error request, twice");
+                done();
+            }, 500);
+        },300);
     });
 
 });
