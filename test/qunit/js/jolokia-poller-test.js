@@ -118,7 +118,8 @@ $(document).ready(function() {
                     // for details)
                     setTimeout(function() {
                         j4p.stop();
-                        equal(counter1,oldCounter1,"Req1 didn't increase since it was unregistered");
+                        ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
+                          "Req1 counters didn't increase more than one since it was unregistered");
                         // It can increase by one if the unregister() happened after a the request has bee already
                         // issued to the backend.
                         ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
@@ -128,7 +129,7 @@ $(document).ready(function() {
                     }, interval + deltaCheck);
                 },interval + deltaCheck);
             },interval + deltaCheck);
-        },100);
+        },500);
     });
 
     test("Multiple requests",function(assert) {
