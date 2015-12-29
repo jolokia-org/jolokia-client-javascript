@@ -137,24 +137,20 @@ $(document).ready(function() {
         var j4p = new Jolokia(JOLOKIA_URL);
         var counter = 0;
         j4p.register(function(resp1,resp2,resp3,resp4) {
-                equal(resp1.status,200);
-                equal(resp2.status,200);
-                ok(resp1.value > 0);
-                ok(resp2.value > 0);
-                equal(resp1.request.attribute,"HeapMemoryUsage");
-                equal(resp2.request.attribute,"ThreadCount");
-                equal(resp3.status,404);
-                ok(!resp4);
-                counter++
-            },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
-            { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
-            { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
-        j4p.start(200);
-        setTimeout(function() {
+            equal(resp1.status,200);
+            equal(resp2.status,200);
+            ok(resp1.value > 0);
+            ok(resp2.value > 0);
+            equal(resp1.request.attribute,"HeapMemoryUsage");
+            equal(resp2.request.attribute,"ThreadCount");
+            equal(resp3.status,404);
+            ok(!resp4);
             j4p.stop();
-            ok(counter >= 2,"Req should be called at least 2 times (counter: " + counter);
             done();
-        },500);
+        },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
+          { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
+          { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
+        j4p.start(200);
     });
 
     test("Config merging",function(assert) {
