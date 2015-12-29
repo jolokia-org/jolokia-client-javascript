@@ -3,5 +3,5 @@ machine:
     version: 5.1.0
 test:
   override:
-    - gulp test --jvmAgent
     - gulp test
+    - gulp test --jvmAgent

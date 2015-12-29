@@ -127,8 +127,8 @@ $(document).ready(function() {
                           oldCounter2 + " <= " + counter2 + ")");
                         done();
                     }, interval + deltaCheck);
-                },interval + deltaCheck);
-            },interval + deltaCheck);
+                }, interval + deltaCheck);
+            }, interval + deltaCheck);
         },500);
     });
 
@@ -136,8 +136,8 @@ $(document).ready(function() {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        var counter = 0;
         j4p.register(function(resp1,resp2,resp3,resp4) {
+            j4p.stop();
             equal(resp1.status,200);
             equal(resp2.status,200);
             ok(resp1.value > 0);
@@ -146,12 +146,13 @@ $(document).ready(function() {
             equal(resp2.request.attribute,"ThreadCount");
             equal(resp3.status,404);
             ok(!resp4);
-            j4p.stop();
             done();
         },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
           { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
           { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
-        j4p.start(200);
+        setTimeout(function() {
+            j4p.start(500)
+        },200);
     });
 
     test("Config merging",function(assert) {
@@ -176,7 +177,7 @@ $(document).ready(function() {
         setTimeout(function() {
             j4p.stop();
             done();
-        },300);
+        },400);
     });
 
     test("OnlyIfModified test - callback",function(assert) {
@@ -257,7 +258,7 @@ $(document).ready(function() {
                 equal(counterE, 2, "One error request, twice");
                 done();
             }, 500);
-        },300);
+        },100);
     });
 
 });
