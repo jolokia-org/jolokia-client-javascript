@@ -107,8 +107,9 @@ $(document).ready(function() {
                     // It can increase by one if the unregister() happened after a the request has bee already
                     // issued to the backend.
                     ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
-                      "Req1 counters didn't increase more than one since it was unregistered");
-                    ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
+                          "Req1 counters didn't increase more than one since it was unregistered (" +
+                          oldCounter1 + " <= " + counter1 + ")");
+                        ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
                                                "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
                     oldCounter2 = counter2;
                     j4p.unregister(id2);
@@ -119,7 +120,8 @@ $(document).ready(function() {
                     setTimeout(function() {
                         j4p.stop();
                         ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
-                          "Req1 counters didn't increase more than one since it was unregistered");
+                          "Req1 counters didn't increase more than one since it was unregistered (" +
+                          oldCounter1 + " <= " + counter1 + ")");
                         // It can increase by one if the unregister() happened after a the request has bee already
                         // issued to the backend.
                         ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
