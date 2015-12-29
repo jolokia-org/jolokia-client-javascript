@@ -337,9 +337,8 @@
              * @param handle the job handle to unregister
              */
             jolokia.unregister = function(handle) {
-                if (handle < jobs.length) {
-                    delete jobs[handle];
-                }
+                delete jobs[handle];
+
             };
 
 

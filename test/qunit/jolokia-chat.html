@@ -18,9 +18,13 @@
 <html>
 <head>
   <title>JMX Notification Demo - Chat</title>
-  <script type="text/javascript" src="scripts/jquery-1.10.2.js"></script>
-  <script type="text/javascript" src="scripts/lib/jolokia.js"></script>
-  <script type="text/javascript" src="scripts/lib/jolokia-simple.js"></script>
+  <script type="text/javascript" src="js/jolokia-env.js"></script>
+
+  <!-- jquery / zepto, copied in a build step -->
+  <script type="text/javascript" src="../../build/support/support-lib.js"></script>
+
+  <script type="text/javascript" src="../../build/jolokia.js"></script>
+  <script type="text/javascript" src="../../build/jolokia-simple.js"></script>
 
   <script type="text/javascript">
     $(function() {

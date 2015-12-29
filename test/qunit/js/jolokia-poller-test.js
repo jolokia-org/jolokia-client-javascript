@@ -73,24 +73,43 @@ $(document).ready(function() {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        var counter1 = 1,
-            counter2 = 1;
+        var counter1 = 0,
+            counter2 = 0;
         var id1 = j4p.register(function(resp) {
             counter1++;
-        },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"});
+        },{
+            type: "READ",
+            mbean: "java.lang:type=Memory",
+            attribute: "HeapMemoryUsage",
+            path: "used"
+        });
         var id2 = j4p.register(function(resp) {
             counter2++;
-        },{ type: "EXEC", mbean: "java.lang:type=Memory", operation: "gc"});
-        j4p.start(300);
+        },{
+            type: "EXEC",
+            mbean: "java.lang:type=Memory",
+            operation: "gc"
+        });
+        var interval = 500;
+        var deltaCheck = 250;
+        j4p.start(interval);
         equal(j4p.jobs().length,2,"2 jobs registered");
         setTimeout(function() {
-            equal(counter1,3,"Req1 should be called 2 times");
-            equal(counter2,3,"Req2 should be called 2 times");
+            ok(counter1 > 0,"Req1 called more than once (counter: " + counter1 + " after " + (interval + deltaCheck) + " ms)");
+            ok(counter2 > 0,"Req2 called more than once (counter: " + counter2 + " after " + (interval + deltaCheck) + " ms)");
+            equal(counter1, counter2, "Req1 and Req2 called as often");
             j4p.unregister(id1);
+            var oldCounter1 = counter1;
+            var oldCounter2 = counter2;
             equal(j4p.jobs().length,1,"1 job remaining");
             setTimeout(function() {
-                equal(counter1,3,"Req1 stays at 2 times since it was unregistered");
-                equal(counter2,5,"Req2 should continue to be requested, now for 4 times");
+                // It can increase by one if the unregister() happened after a the request has bee already
+                // issued to the backend.
+                ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
+                  "Req1 counters didn't increase more than one since it was unregistered");
+                ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
+                                           "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
+                oldCounter2 = counter2;
                 j4p.unregister(id2);
                 equal(j4p.jobs().length,0,"No job remaining");
                 // Handles should stay stable, so the previous unregister of id1 should not change
@@ -98,12 +117,16 @@ $(document).ready(function() {
                 // for details)
                 setTimeout(function() {
                     j4p.stop();
-                    equal(counter1,3,"Req1 stays at 3 times since it was unregistered");
-                    equal(counter2,5,"Req2 stays at 4 times since it was unregistered");
+                    equal(counter1,oldCounter1,"Req1 didn't increase since it was unregistered");
+                    // It can increase by one if the unregister() happened after a the request has bee already
+                    // issued to the backend.
+                    ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
+                      "Req2 counters didn't increase more than one since it was unregistered (" +
+                      oldCounter2 + " <= " + counter2 + ")");
                     done();
-                },300);
-            },650);
-        },750)
+                }, interval + deltaCheck);
+            },interval + deltaCheck);
+        },interval + deltaCheck);
     });
 
     test("Multiple requests",function(assert) {

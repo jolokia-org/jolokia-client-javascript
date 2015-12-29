@@ -20,13 +20,15 @@
 <html>
 <head>
   <title>Jolokia Javascript (simple) Testsuite</title>
-    <script type="text/javascript" src="../support/jquery-1.11.3.js"></script>
+  <script type="text/javascript" src="js/jolokia-env.js"></script>
+
+  <!-- jquery / zepto, copied in a build step -->
+  <script type="text/javascript" src="../../build/support/support-lib.js"></script>
   <script type="text/javascript" src="js/qunit.js"></script>
-  <script type="text/javascript" src="../../dest/jolokia.js"></script>
-  <script type="text/javascript" src="../../dest/jolokia-simple.js"></script>
+  <script type="text/javascript" src="../../build/jolokia.js"></script>
+  <script type="text/javascript" src="../../build/jolokia-simple.js"></script>
 
   <!-- All Test Suites:-->
-  <script type="text/javascript" src="js/jolokia-url.js"></script>
   <script type="text/javascript" src="js/jolokia-simple-test.js"></script>
 
   <link rel="stylesheet" href="css/qunit.css" type="text/css" media="screen" />
