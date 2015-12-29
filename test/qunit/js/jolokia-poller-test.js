@@ -92,7 +92,7 @@ $(document).ready(function() {
         });
         setTimeout(function() {
             var interval = 200;
-            var deltaCheck = 250;
+            var deltaCheck = 1000;
             j4p.start(interval);
             equal(j4p.jobs().length,2,"2 jobs registered");
             setTimeout(function() {
@@ -124,14 +124,14 @@ $(document).ready(function() {
                           oldCounter1 + " <= " + counter1 + ")");
                         // It can increase by one if the unregister() happened after a the request has bee already
                         // issued to the backend.
-                        ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
+                        ok(counter2 == oldCounter2 || counter2 == oldCounter2 + 1,
                           "Req2 counters didn't increase more than one since it was unregistered (" +
                           oldCounter2 + " <= " + counter2 + ")");
                         done();
                     }, interval + deltaCheck);
                 }, interval + deltaCheck);
             }, interval + deltaCheck);
-        },500);
+        },100);
     });
 
     test("Multiple requests",function(assert) {
