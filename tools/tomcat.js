@@ -109,7 +109,7 @@ module.exports = (function() {
     }
 
     function deployJolokiaJvmAgent(version,opts,done) {
-        var destPath = tomcatDir + "/lib/jolokia-agent.jar";
+        var destPath = tomcatDir + "/jolokia-agent.jar";
         if (fileExists(destPath) && ((opts && opts.force) || version.match(/SNAPSHOT/))) {
             fs.unlinkSync(destPath);
         }
@@ -122,7 +122,7 @@ module.exports = (function() {
 
     function createJvmAgentConfig() {
         // Create setenv.sh
-        var agentOpts = "-javaagent:" + path.resolve(tomcatDir) + "/lib/jolokia-agent.jar=port=8778,host=localhost";
+        var agentOpts = "-javaagent:" + path.resolve(tomcatDir) + "/jolokia-agent.jar=port=8778,host=localhost";
         fs.writeFile(tomcatDir + "/bin/setenv.sh", "CATALINA_OPTS=\"" + agentOpts + "\"\n", 'utf8', function (err) {
             if (err) {
                 throw new Error(err);

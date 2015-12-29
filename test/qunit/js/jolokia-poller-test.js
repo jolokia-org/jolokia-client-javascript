@@ -90,50 +90,52 @@ $(document).ready(function() {
             mbean: "java.lang:type=Memory",
             operation: "gc"
         });
-        var interval = 200;
-        var deltaCheck = 250;
-        j4p.start(interval);
-        equal(j4p.jobs().length,2,"2 jobs registered");
         setTimeout(function() {
-            ok(counter1 > 0,"Req1 called more than once (counter: " + counter1 + " after " + (interval + deltaCheck) + " ms)");
-            ok(counter2 > 0,"Req2 called more than once (counter: " + counter2 + " after " + (interval + deltaCheck) + " ms)");
-            equal(counter1, counter2, "Req1 and Req2 called as often");
-            j4p.unregister(id1);
-            var oldCounter1 = counter1;
-            var oldCounter2 = counter2;
-            equal(j4p.jobs().length,1,"1 job remaining");
+            var interval = 200;
+            var deltaCheck = 250;
+            j4p.start(interval);
+            equal(j4p.jobs().length,2,"2 jobs registered");
             setTimeout(function() {
-                // It can increase by one if the unregister() happened after a the request has bee already
-                // issued to the backend.
-                ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
-                  "Req1 counters didn't increase more than one since it was unregistered");
-                ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
-                                           "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
-                oldCounter2 = counter2;
-                j4p.unregister(id2);
-                equal(j4p.jobs().length,0,"No job remaining");
-                // Handles should stay stable, so the previous unregister of id1 should not change
-                // the meaining of id2 (see http://jolokia.963608.n3.nabble.com/Possible-bug-in-the-scheduler-tp4023893.html
-                // for details)
+                ok(counter1 > 0,"Req1 called more than once (counter: " + counter1 + " after " + (interval + deltaCheck) + " ms)");
+                ok(counter2 > 0,"Req2 called more than once (counter: " + counter2 + " after " + (interval + deltaCheck) + " ms)");
+                equal(counter1, counter2, "Req1 and Req2 called as often");
+                j4p.unregister(id1);
+                var oldCounter1 = counter1;
+                var oldCounter2 = counter2;
+                equal(j4p.jobs().length,1,"1 job remaining");
                 setTimeout(function() {
-                    j4p.stop();
-                    equal(counter1,oldCounter1,"Req1 didn't increase since it was unregistered");
                     // It can increase by one if the unregister() happened after a the request has bee already
                     // issued to the backend.
-                    ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
-                      "Req2 counters didn't increase more than one since it was unregistered (" +
-                      oldCounter2 + " <= " + counter2 + ")");
-                    done();
-                }, interval + deltaCheck);
+                    ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
+                      "Req1 counters didn't increase more than one since it was unregistered");
+                    ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
+                                               "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
+                    oldCounter2 = counter2;
+                    j4p.unregister(id2);
+                    equal(j4p.jobs().length,0,"No job remaining");
+                    // Handles should stay stable, so the previous unregister of id1 should not change
+                    // the meaining of id2 (see http://jolokia.963608.n3.nabble.com/Possible-bug-in-the-scheduler-tp4023893.html
+                    // for details)
+                    setTimeout(function() {
+                        j4p.stop();
+                        equal(counter1,oldCounter1,"Req1 didn't increase since it was unregistered");
+                        // It can increase by one if the unregister() happened after a the request has bee already
+                        // issued to the backend.
+                        ok(counter2 == oldCounter2 || counter2 == oldCounter1 + 2,
+                          "Req2 counters didn't increase more than one since it was unregistered (" +
+                          oldCounter2 + " <= " + counter2 + ")");
+                        done();
+                    }, interval + deltaCheck);
+                },interval + deltaCheck);
             },interval + deltaCheck);
-        },interval + deltaCheck);
+        },100);
     });
 
     test("Multiple requests",function(assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        var counter = 1;
+        var counter = 0;
         j4p.register(function(resp1,resp2,resp3,resp4) {
                 equal(resp1.status,200);
                 equal(resp2.status,200);
@@ -150,7 +152,7 @@ $(document).ready(function() {
         j4p.start(200);
         setTimeout(function() {
             j4p.stop();
-            equal(counter,3,"Req should be called 3 times");
+            ok(counter >= 2,"Req should be called at least 2 times (counter: " + counter);
             done();
         },500);
     });
