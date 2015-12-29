@@ -338,7 +338,6 @@
              */
             jolokia.unregister = function(handle) {
                 delete jobs[handle];
-
             };
 
 

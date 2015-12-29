@@ -26,7 +26,7 @@ var SUPPORT_LIB_MAP = {
 
 // Options
 var optionsCfg = {
-    string: [ "test", "version", "supportLib" ],
+    string: [ "test", "version", "supportLib", "pollInterval" ],
     boolean: [ "force", "jvmAgent"],
 
     default: {
@@ -78,11 +78,15 @@ gulp.task('supportLib', function() {
 
 gulp.task('qunit', [ 'supportLib' ], function() {
     var file = options.test ? options.test : "jolokia-all-test.html";
-    return remoteSrc('test/qunit/' + file + "?port=" + options.port, {
+    var url = 'test/qunit/' + file + "?port=" + options.port;
+    if (options.pollInterval) {
+        url += "&pollInterval=" + options.pollInterval;
+    }
+    return remoteSrc(url, {
         base: "http://localhost:8080/jolokia-js/"
     }).pipe(qunit({
         'phantomjs-options': [ "--web-security=" + (options.jvmAgent ? "false" : "true") ],
-        timeout: 20
+        timeout: 40
     }));
 });
 

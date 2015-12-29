@@ -16,173 +16,172 @@
 
 // Poller tests
 
-$(document).ready(function() {
+$(document).ready(function () {
+
+    var J4P_INTERVAL = window.JOLOKIA_POLL_INTERVAL || 500;
+    var J4P_CHECK_DELTA = J4P_INTERVAL / 2;
 
     module("Poller");
-    test("Simple registered request",function(assert) {
+    test("Simple registered request", function (assert) {
         var done = assert.async();
 
         var counter1 = 1,
-            counter2 = 1;
+          counter2 = 1;
         var j4p = new Jolokia(JOLOKIA_URL);
 
-        j4p.register(function(resp) {
+        j4p.register(function (resp) {
             counter1++;
-        },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"});
-        j4p.register(function(resp) {
+        }, {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"});
+        j4p.register(function (resp) {
             counter2++;
-        },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "max"});
+        }, {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "max"});
 
-        equal(j4p.jobs().length,2,"Two jobs registered");
+        equal(j4p.jobs().length, 2, "Two jobs registered");
 
-        ok(!j4p.isRunning(),"Poller should not be running");
-        j4p.start(100);
-        ok(j4p.isRunning(),"Poller should be running");
-        setTimeout(function() {
+        ok(!j4p.isRunning(), "Poller should not be running");
+        j4p.start(J4P_INTERVAL);
+        ok(j4p.isRunning(), "Poller should be running");
+        setTimeout(function () {
             j4p.stop();
-            ok(!j4p.isRunning(),"Poller should be stopped");
-            equal(counter1,3,"Request1 should have been called 3 times");
-            equal(counter2,3,"Request2 should have been called 3 times");
+            ok(!j4p.isRunning(), "Poller should be stopped");
+            equal(counter1, 3, "Request1 should have been called 3 times");
+            equal(counter2, 3, "Request2 should have been called 3 times");
             done();
-        },280);
+        }, 2 * J4P_INTERVAL + J4P_CHECK_DELTA);
     });
 
-    test("Starting and stopping",function(assert) {
+    test("Starting and stopping", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        var counter = 1;
+        var counter = 0;
 
-        j4p.register(function(resp) {
-            counter++;
-            },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
-            { type: "SEARCH", mbean: "java.lang:type=*"});
-        j4p.start(100);
-        setTimeout(function() {
+        j4p.register(function (resp) {
+              counter++;
+          }, {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
+          {type: "SEARCH", mbean: "java.lang:type=*"});
+        j4p.start(J4P_INTERVAL);
+        setTimeout(function () {
             j4p.stop();
-            setTimeout(function() {
-                equal(counter,4,"Request should have been called 4 times")
-                ok(!j4p.isRunning(),"Poller should be stopped");
-                done();
-            },300);
-        },350);
+            equal(counter, 3, "Request should have been called 4 times");
+            ok(!j4p.isRunning(), "Poller should be stopped");
+            done();
+        }, 3 * J4P_INTERVAL + J4P_CHECK_DELTA);
 
     });
 
-    test("Registering- and Deregistering",function(assert) {
+    test("Registering- and Deregistering", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
         var counter1 = 0,
-            counter2 = 0;
-        var id1 = j4p.register(function(resp) {
+          counter2 = 0;
+        var id1 = j4p.register(function (resp) {
             counter1++;
-        },{
-            type: "READ",
-            mbean: "java.lang:type=Memory",
+        }, {
+            type:      "READ",
+            mbean:     "java.lang:type=Memory",
             attribute: "HeapMemoryUsage",
-            path: "used"
+            path:      "used"
         });
-        var id2 = j4p.register(function(resp) {
+        var id2 = j4p.register(function (resp) {
             counter2++;
-        },{
-            type: "EXEC",
-            mbean: "java.lang:type=Memory",
+        }, {
+            type:      "EXEC",
+            mbean:     "java.lang:type=Memory",
             operation: "gc"
         });
-        setTimeout(function() {
-            var interval = 200;
-            var deltaCheck = 1000;
-            j4p.start(interval);
-            equal(j4p.jobs().length,2,"2 jobs registered");
-            setTimeout(function() {
-                ok(counter1 > 0,"Req1 called more than once (counter: " + counter1 + " after " + (interval + deltaCheck) + " ms)");
-                ok(counter2 > 0,"Req2 called more than once (counter: " + counter2 + " after " + (interval + deltaCheck) + " ms)");
-                equal(counter1, counter2, "Req1 and Req2 called as often");
-                j4p.unregister(id1);
-                var oldCounter1 = counter1;
-                var oldCounter2 = counter2;
-                equal(j4p.jobs().length,1,"1 job remaining");
-                setTimeout(function() {
+        var interval = J4P_INTERVAL;
+        var deltaCheck = J4P_CHECK_DELTA;
+        j4p.start(interval);
+        equal(j4p.jobs().length, 2, "2 jobs registered");
+        setTimeout(function () {
+            ok(counter1 > 0,
+              "Req1 called more than once (counter: " + counter1 + " after " + (interval + deltaCheck) + " ms)");
+            ok(counter2 > 0,
+              "Req2 called more than once (counter: " + counter2 + " after " + (interval + deltaCheck) + " ms)");
+            equal(counter1, counter2, "Req1 and Req2 called as often");
+            j4p.unregister(id1);
+            var oldCounter1 = counter1;
+            var oldCounter2 = counter2;
+            equal(j4p.jobs().length, 1, "1 job remaining");
+            setTimeout(function () {
+                // It can increase by one if the unregister() happened after a the request has bee already
+                // issued to the backend.
+                ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
+                  "Req1 counters didn't increase more than one since it was unregistered (" +
+                  oldCounter1 + " <= " + counter1 + ")");
+                ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
+                                           "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
+                oldCounter2 = counter2;
+                j4p.unregister(id2);
+                equal(j4p.jobs().length, 0, "No job remaining");
+                // Handles should stay stable, so the previous unregister of id1 should not change
+                // the meaining of id2 (see http://jolokia.963608.n3.nabble.com/Possible-bug-in-the-scheduler-tp4023893.html
+                // for details)
+                setTimeout(function () {
+                    j4p.stop();
+                    ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
+                      "Req1 counters didn't increase more than one since it was unregistered (" +
+                      oldCounter1 + " <= " + counter1 + ")");
                     // It can increase by one if the unregister() happened after a the request has bee already
                     // issued to the backend.
-                    ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
-                          "Req1 counters didn't increase more than one since it was unregistered (" +
-                          oldCounter1 + " <= " + counter1 + ")");
-                        ok(counter2 > oldCounter2, "Req2 should continue to be requested " +
-                                               "(counter: " + counter2 + " after " + (interval + deltaCheck) + " ms");
-                    oldCounter2 = counter2;
-                    j4p.unregister(id2);
-                    equal(j4p.jobs().length,0,"No job remaining");
-                    // Handles should stay stable, so the previous unregister of id1 should not change
-                    // the meaining of id2 (see http://jolokia.963608.n3.nabble.com/Possible-bug-in-the-scheduler-tp4023893.html
-                    // for details)
-                    setTimeout(function() {
-                        j4p.stop();
-                        ok(counter1 == oldCounter1 || counter1 == oldCounter1 + 1,
-                          "Req1 counters didn't increase more than one since it was unregistered (" +
-                          oldCounter1 + " <= " + counter1 + ")");
-                        // It can increase by one if the unregister() happened after a the request has bee already
-                        // issued to the backend.
-                        ok(counter2 == oldCounter2 || counter2 == oldCounter2 + 1,
-                          "Req2 counters didn't increase more than one since it was unregistered (" +
-                          oldCounter2 + " <= " + counter2 + ")");
-                        done();
-                    }, interval + deltaCheck);
+                    ok(counter2 == oldCounter2 || counter2 == oldCounter2 + 1,
+                      "Req2 counters didn't increase more than one since it was unregistered (" +
+                      oldCounter2 + " <= " + counter2 + ")");
+                    done();
                 }, interval + deltaCheck);
             }, interval + deltaCheck);
-        },100);
+        }, interval + deltaCheck);
     });
 
-    test("Multiple requests",function(assert) {
+    test("Multiple requests", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
-        j4p.register(function(resp1,resp2,resp3,resp4) {
-            j4p.stop();
-            equal(resp1.status,200);
-            equal(resp2.status,200);
-            ok(resp1.value > 0);
-            ok(resp2.value > 0);
-            equal(resp1.request.attribute,"HeapMemoryUsage");
-            equal(resp2.request.attribute,"ThreadCount");
-            equal(resp3.status,404);
-            ok(!resp4);
-            done();
-        },{ type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
-          { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
-          { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
-        setTimeout(function() {
-            j4p.start(500)
-        },200);
+        j4p.register(function (resp1, resp2, resp3, resp4) {
+              j4p.stop();
+              equal(resp1.status, 200);
+              equal(resp2.status, 200);
+              ok(resp1.value > 0);
+              ok(resp2.value > 0);
+              equal(resp1.request.attribute, "HeapMemoryUsage");
+              equal(resp2.request.attribute, "ThreadCount");
+              equal(resp3.status, 404);
+              ok(!resp4);
+              done();
+          }, {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
+          {type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
+          {type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
+        j4p.start(J4P_INTERVAL);
     });
 
-    test("Config merging",function(assert) {
+    test("Config merging", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
         j4p.register({
-                callback: function(resp1,resp2) {
-                    ok(!resp1.error_value);
-                    ok(resp1.stacktrace);
-                    ok(resp2.error_value);
-                    ok(!resp2.stackTrace);
-                },
-                config: {
-                    serializeException: true
-                }
-            },
-            { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber", config: { serializeException: false}},
-            { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber", config: { includeStackTrace: false}}
+              callback: function (resp1, resp2) {
+                  ok(!resp1.error_value);
+                  ok(resp1.stacktrace);
+                  ok(resp2.error_value);
+                  ok(!resp2.stackTrace);
+              },
+              config:   {
+                  serializeException: true
+              }
+          },
+          {type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber", config: {serializeException: false}},
+          {type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber", config: {includeStackTrace: false}}
         );
-        j4p.start(200);
-        setTimeout(function() {
+        j4p.start(J4P_INTERVAL);
+        setTimeout(function () {
             j4p.stop();
             done();
-        },400);
+        }, J4P_INTERVAL + J4P_CHECK_DELTA);
     });
 
-    test("OnlyIfModified test - callback",function(assert) {
+    test("OnlyIfModified test - callback", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
@@ -191,76 +190,74 @@ $(document).ready(function() {
             3: 0
         };
         j4p.register({
-                callback: function() {
-                    counter[arguments.length]++;
-                },
-                onlyIfModified: true
-            },
-            { type: "LIST", config: { maxDepth: 2}},
-            { type: "LIST", config: { maxDepth: 1}},
-            { type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"}
+              callback: function () {
+                  counter[arguments.length]++;
+              },
+              onlyIfModified: true
+          },
+          {type: "LIST", config: {maxDepth: 2}},
+          {type: "LIST", config: {maxDepth: 1}},
+          {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"}
         );
-        j4p.start(200);
-        setTimeout(function() {
+        j4p.start(J4P_INTERVAL);
+        setTimeout(function () {
             j4p.stop();
-            equal(counter[3],1);
-            equal(counter[1],1);
+            equal(counter[3], 1, "3 requests == " + counter[3]);
+            equal(counter[1], 1, "1 request == " + counter[1]);
             done();
-        },500);
+        }, 2 * J4P_INTERVAL + J4P_CHECK_DELTA);
     });
 
-    test("OnlyIfModified test - success and error ",function(assert) {
+    test("OnlyIfModified test - success and error ", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
         var counter = 0;
         j4p.register({
-                success: function(resp1) {
-                    counter++;
-                },
-                error: function(resp1) {
-                    counter++;
-                },
-                onlyIfModified: true
-            },
-            { type: "LIST", config: { maxDepth: 2}}
+              success:        function (resp1) {
+                  counter++;
+              },
+              error:          function (resp1) {
+                  counter++;
+              },
+              onlyIfModified: true
+          },
+          {type: "LIST", config: {maxDepth: 2}}
         );
-        j4p.start(200);
-        setTimeout(function() {
+        j4p.start(J4P_INTERVAL);
+        setTimeout(function () {
             j4p.stop();
             // Should have been called only once
-            equal(counter,1);
+            equal(counter, 1);
             done();
-        },600);
+        }, J4P_INTERVAL + J4P_CHECK_DELTA);
     });
 
-    test("Multiple requests with success/error callbacks",function(assert) {
+    test("Multiple requests with success/error callbacks", function (assert) {
         var done = assert.async();
 
         var j4p = new Jolokia(JOLOKIA_URL);
         var counterS = 0,
-            counterE = 0;
+          counterE = 0;
         j4p.register({
-                success: function(resp) {
-                    counterS++;
-                },
-                error: function(resp) {
-                    counterE++;
-                    equal(resp.status,404);
-                }
-            },
-            { type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
-            { type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
-            { type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
-        setTimeout(function() {
-            j4p.start(200);
-            setTimeout(function () {
-                j4p.stop();
-                equal(counterS, 4, "Req should be called 4 times successfully");
-                equal(counterE, 2, "One error request, twice");
-                done();
-            }, 500);
-        },100);
+              success: function (resp) {
+                  counterS++;
+              },
+              error:   function (resp) {
+                  counterE++;
+                  equal(resp.status, 404);
+              }
+          },
+          {type: "READ", mbean: "java.lang:type=Memory", attribute: "HeapMemoryUsage", path: "used"},
+          {type: "READ", mbean: "java.lang:type=Threading", attribute: "ThreadCount"},
+          {type: "READ", mbean: "bla.blu:type=foo", attribute: "blubber"});
+        j4p.start(J4P_INTERVAL);
+        setTimeout(function () {
+            j4p.stop();
+            equal(counterS, 4, "Req should be called 4 times successfully");
+            equal(counterE, 2, "One error request, twice");
+            done();
+        }, 2 * J4P_INTERVAL + J4P_CHECK_DELTA);
     });
 
 });
