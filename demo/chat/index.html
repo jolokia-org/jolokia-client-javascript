@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Jolokia JavaScript Demos</title>
+  <meta name="description" content="Demos for Jolokia JavaScript">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+  <!-- load Ink's CSS -->
+  <link rel="stylesheet" type="text/css" href="../assets/css/ink-flex.min.css">
+  <link rel="stylesheet" type="text/css" href="../assets/css/font-awesome.min.css">
+
+  <!-- load Ink's CSS for IE8 -->
+  <!--[if lt IE 9 ]>
+  <link rel="stylesheet" href="../assets/css/ink-ie.min.css" type="text/css" media="screen" title="no title"
+        charset="utf-8">
+  <![endif]-->
+
+  <!-- test browser flexbox support and load legacy grid if unsupported -->
+  <script type="text/javascript" src="../assets/js/modernizr.js"></script>
+  <script type="text/javascript">
+    Modernizr.load({
+      test: Modernizr.flexbox,
+      nope: '../assets/css/ink-legacy.min.css'
+    });
+  </script>
+
+  <!-- load Ink's javascript files -->
+  <script type="text/javascript" src="../assets/js/holder.js"></script>
+  <script type="text/javascript" src="../assets/js/ink-all.min.js"></script>
+  <script type="text/javascript" src="../assets/js/autoload.min.js"></script>
+
+  <script type="text/javascript" src="../../tools/support/jquery-2.1.4.js"></script>
+  <script type="text/javascript" src="../../build/jolokia.js"></script>
+  <script type="text/javascript" src="../../build/jolokia-simple.js"></script>
+
+  <style type="text/css">
+    body {
+      background: #ededed;
+    }
+
+    header h1 small:before {
+      content: "|";
+      margin: 0 0.5em;
+      font-size: 1.6em;
+    }
+
+    footer {
+      background: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+<div class="ink-grid">
+  <header class="vertical-space">
+    <h1>Notifications
+      <small>Jolokia - JMX on Capsaicin</small>
+    </h1>
+    <nav class="ink-navigation">
+      <ul class="menu horizontal red">
+        <li class><a href="../index.html">Overview</a></li>
+        <li class="active"><a href="#">Notifications</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="column-group push-center gutters">
+
+    <!-- Pull / SSE Mode -->
+    <div class="all-100">
+      <div class="ink-dropdown" data-target="#mode-dropdown" data-dismiss-on-inside-click="true">
+        <button id="mode-button" class="ink-button blue align-right"><strong>Pull</strong> Mode</button>
+        <ul id="mode-dropdown" class="align-right dropdown-menu">
+          <li id="pull-mode-button"><a href="#"><strong>Pull</strong> Mode</a></li>
+          <li id="sse-mode-button"><a href="#"><strong>SSE</strong> Mode</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input form for messages -->
+  <form class="ink-form" >
+    <div class="column-group gutters">
+      <div class="control-group all-30">
+        <div class="control">
+          <p class="tip">Name</p>
+          <input type="text" name="Name" id="name" placeholder="Who are you ?">
+        </div>
+      </div>
+      <div class="control-group all-70">
+        <p class="tip">Message</p>
+        <div class="control append-button">
+          <span><input type="text" name="Message" id="message" placeholder="What's up ?"></span>
+          <button id="message-submit" class="ink-button"><i class="fa fa-envelope-o"></i></button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Message Panel -->
+  <div class="column-group gutters">
+    <div class="all-100">
+      <table id="message-table" class="ink-table">
+      <thead>
+      <tr>
+        <th width="10%" class="align-left">Delta (ms)</th>
+        <th width="5%" class="align-left"></th>
+        <th width="20%" class="align-left">Name</th>
+        <th width="70%" class="align-left">Message</th>
+      </tr>
+      </thead>
+      </table>
+      </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+
+  $(function () {
+
+    var url = extractUrl();
+    var jolokia;
+
+    setupPullModeCombo();
+
+    setupUserName();
+    setupMessageSubmit();
+    startJolokia("pull");
+
+    // ===========================================================================================
+
+    function startJolokia(mode) {
+      jolokia = new Jolokia(url);
+      jolokia.start(5000);
+      jolokia.addNotificationListener({
+        mode: mode,
+        mbean: "jolokia.it:type=Chat",
+        callback: function(notifs) {
+          $.each(notifs.notifications,function(i,notif) {
+            var d = notif.userData;
+            $("#message-table").append("<tr class='" + bgColor(d.user) + "'>" +
+                                       "<td>" + (Date.now() - d.timestamp) + "</td>" +
+                                       "<td>" + mode.toUpperCase() + "</td>" +
+                                       "<td>" + d.user + "</td>" +
+                                       "<td>" + d.message + "</td>" +
+                                       "</tr>");
+          });
+        }
+      });
+    }
+
+    var COLORS = [ "red", "green", "blue", "orange", "grey", "black", "yellow" ];
+
+    function bgColor(val) {
+      return COLORS[hashCode(val) % COLORS.length];
+    }
+
+    function stopJolokia() {
+      jolokia.stop();
+      jolokia.unregisterNotificationClient();
+    }
+
+    function setupUserName() {
+      var namesList = [
+          "Jakob",
+          "Bilbo",
+          "Marvin",
+          "Xavier",
+          "Roland",
+          "Frodo",
+          "Moss",
+          "Roy",
+          "Jen"
+      ];
+      $("#name").val(namesList[Math.floor(Math.random() * namesList.length)]).click(function() {
+        $(this).select();
+      }).keypress(function(e) {
+        if (e.which == 13) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    function setupPullModeCombo() {
+      $("#pull-mode-button").click(function () {
+        $("#mode-button").addClass("blue").removeClass("green").html("<strong>Pull</strong> Mode");
+        stopJolokia();
+        startJolokia("pull");
+      });
+      $("#sse-mode-button").click(function () {
+        $("#mode-button").addClass("green").removeClass("blue").html("<strong>SSE</strong> Mode");
+        stopJolokia();
+        startJolokia("sse");
+      });
+    }
+
+    function setupMessageSubmit() {
+      $('#message').keypress(function (e) {
+        if (e.which == 13) {
+          e.preventDefault();
+          submitMessage();
+        }
+      });
+
+      $('#message-submit').click(function(e) {
+        e.preventDefault();
+        submitMessage();
+      });
+    }
+
+    function submitMessage() {
+      var user = $.trim($('#name').val()) || "(unknown)";
+      var msg = $('#message');
+      jolokia.execute("jolokia.it:type=Chat", "message", user, msg.val());
+      msg.val("");
+    }
+
+    function extractUrl() {
+      var port = 8080;
+      if (window.location.search) {
+        var params = window.location.search.match(/port=(\d+)/);
+        if (params) {
+          port = params[1];
+        }
+      }
+      return "http://localhost:" + port + "/jolokia";
+    }
+
+    function hashCode(val) {
+      var hash = 0, i, chr, len;
+      if (val.length === 0) return hash;
+      for (i = 0, len = val.length; i < len; i++) {
+        chr   = val.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return Math.abs(hash);
+    }
+  });
+</script>
+
+</body>
+</html>

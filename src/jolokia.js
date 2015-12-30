@@ -431,7 +431,9 @@
                       }
                       var handle = {id: resp.value, mode: mode};
                       notificationHandlerFunc("add", mode)(handle, opts);
-                      callback(handle);
+                      if (callback) {
+                          callback(handle);
+                      }
                   });
             };
 

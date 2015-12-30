@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Jolokia JavaScript Demos</title>
+  <meta name="description" content="Demos for Jolokia JavaScript">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+  <!-- load Ink's CSS -->
+  <link rel="stylesheet" type="text/css" href="assets/css/ink-flex.min.css">
+  <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.min.css">
+
+  <!-- load Ink's CSS for IE8 -->
+  <!--[if lt IE 9 ]>
+  <link rel="stylesheet" href="assets/css/ink-ie.min.css" type="text/css" media="screen" title="no title"
+        charset="utf-8">
+  <![endif]-->
+
+  <!-- test browser flexbox support and load legacy grid if unsupported -->
+  <script type="text/javascript" src="assets/js/modernizr.js"></script>
+  <script type="text/javascript">
+    Modernizr.load({
+      test: Modernizr.flexbox,
+      nope: 'assets/css/ink-legacy.min.css'
+    });
+  </script>
+
+  <!-- load Ink's javascript files -->
+  <script type="text/javascript" src="assets/js/holder.js"></script>
+  <script type="text/javascript" src="assets/js/ink-all.min.js"></script>
+  <script type="text/javascript" src="assets/js/autoload.min.js"></script>
+
+  <style type="text/css">
+    body {
+      background: #ededed;
+    }
+
+    header h1 small:before {
+      content: "|";
+      margin: 0 0.5em;
+      font-size: 1.6em;
+    }
+
+    footer {
+      background: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+<div class="ink-grid">
+  <header class="vertical-space">
+    <h1>Jolokia JavaScript Demos
+      <small>Jolokia - JMX on Capsaicin</small>
+    </h1>
+    <nav class="ink-navigation">
+      <ul class="menu horizontal red">
+        <li class="active"><a href="#">Overview</a></li>
+        <li><a href="chat/index.html">Notifications</a></li>
+      </ul>
+    </nav>
+  </header>
+  <div class="column-group gutters">
+    <div class="all-100">
+      <p>
+        Here you can find various examples for how the
+        <a href="https://github.com/jolokia-org/jolokia-client-javascript">Jolokia JavaScript Client</a> can be used.
+      </p>
+      <ul>
+        <li>
+          <a href="chat/index.html">Notifications</a> : Sample chat application showing the JMX notification
+          support in Jolokia 2.0, including Pull and Server Sent Event (SSE) mode.
+        </li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

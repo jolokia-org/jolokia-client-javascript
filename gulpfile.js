@@ -10,7 +10,7 @@ var gulp = require('gulp'),
   remoteSrc = require('gulp-remote-src'),
   minimist = require('minimist'),
   gutil = require('gulp-util'),
-  tomcat = require('./tools/tomcat.js');
+  tomcat = require('./tools/gulp/tomcat.js');
 
 // Where to create the files
 var buildDir = "build";
@@ -70,7 +70,7 @@ gulp.task('supportLib', function() {
     var supportLib = options.supportLib || DEFAULT_SUPPORT_LIB;
     supportLib = SUPPORT_LIB_MAP[supportLib] || supportLib;
 
-    return gulp.src("test/support/" + supportLib)
+    return gulp.src("tools/support/" + supportLib)
       .pipe(gutil.log("Using " + gutil.colors.green(supportLib) + " for testing") && gutil.noop())
       .pipe(rename("support-lib.js"))
       .pipe(gulp.dest(buildDir + "/support/"));

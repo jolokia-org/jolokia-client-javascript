@@ -1,6 +1,6 @@
 'use strict';
 
-var p = require('../package.json'),
+var p = require('../../package.json'),
   rimraf = require('rimraf'),
   fs = require('fs'),
   http = require('http'),
@@ -63,7 +63,7 @@ module.exports = (function() {
                     createProgressBar('apache-tomcat-' + p.testVersions.tomcat,response);
                     response
                       .on('end', function () {
-                          addStaticContent(tomcatDir + "/conf/server.xml",path.resolve(__dirname + "/.."));
+                          addStaticContent(tomcatDir + "/conf/server.xml",path.resolve(__dirname + "/../.."));
                           initAgent(opts,done);
                       })
                       .pipe(gunzip())
