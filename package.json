@@ -1,31 +1,27 @@
 {
-  "name" : "jolokia",
+  "name": "jolokia",
   "version": "2.0.0-SNAPSHOT",
-  "description" : "JavaScript Clien for Jolokia (http://www.jolokia.org)",
-  "homepage" : "http://www.jolokia.org",
-
+  "description": "JavaScript Clien for Jolokia (http://www.jolokia.org)",
+  "homepage": "http://www.jolokia.org",
   "author": {
     "name": "Roland Huss",
     "email": "roland@jolokia.org"
   },
-
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/jolokia-org/jolokia-client-javascript.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jolokia-org/jolokia-client-javascript.git"
   },
-
   "testVersions": {
     "jolokia": "2.0.0-SNAPSHOT",
     "jolokia-it": "2.0.0-SNAPSHOT",
     "tomcat": "8.0.30"
   },
-
   "license": "Apache-2.0",
-
   "devDependencies": {
     "del": "^2.2.0",
     "gulp": "^3.9.0",
     "gulp-gzip": "^1.2.0",
+    "gulp-open": "^1.0.0",
     "gulp-qunit": "latest",
     "gulp-remote-src": "^0.4.0",
     "gulp-rename": "^1.2.2",

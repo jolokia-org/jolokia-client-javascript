@@ -10,10 +10,12 @@ var gulp = require('gulp'),
   remoteSrc = require('gulp-remote-src'),
   minimist = require('minimist'),
   gutil = require('gulp-util'),
+  open = require('gulp-open'),
   tomcat = require('./tools/gulp/tomcat.js');
 
 // Where to create the files
 var buildDir = "build";
+var scripts = "src/*.js";
 
 var JOLOKIA_VERSION = "2.0.0-SNAPSHOT";
 
@@ -39,7 +41,6 @@ var optionsCfg = {
 var options = minimist(process.argv.slice(2), optionsCfg);
 options.port = options.jvmAgent ? 8778 : 8080;
 
-var scripts = "src/*.js";
 
 gulp.task('clean', function() {
     del(buildDir + "/*");
@@ -103,3 +104,11 @@ gulp.task('watch', function() {
     gulp.watch(scripts,['default']);
 });
 
+gulp.task('demo', function() {
+    runSequence('default','start',function() {
+        remoteSrc('demo', {
+            base: "http://localhost:8080/jolokia-js/"
+        })
+          .pipe(open());
+    })
+});

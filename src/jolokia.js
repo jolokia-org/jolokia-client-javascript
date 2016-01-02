@@ -594,6 +594,14 @@
                                 }
                             });
                             callback && (this.eventSource.onopen = callback);
+                            this.eventSource.onerror = function(event) {
+                                console.log("Error: " + event);
+                                console.dir(event);
+                            };
+                            this.eventSource.onmessage = function(event) {
+                                console.log("Message: " + event);
+                                console.dir(event);
+                            };
                         }
                     },
                     add: function(handle, opts) {
