@@ -30,7 +30,7 @@ module.exports = (function() {
 
     return {
         start: function (done) {
-            var prc = exec(tomcatDir + "/bin/catalina.sh", 'jpda', 'run');
+            var prc = execTomcat('jpda', 'run');
 
             function waitForTomcatStartup(data) {
                 var str = data.toString();
@@ -48,7 +48,7 @@ module.exports = (function() {
         },
 
         stop: function (done) {
-            var ret = exec(tomcatDir + "/bin/catalina.sh" , "stop", "1", "-force");
+            var ret = execTomcat("stop", "1", "-force");
             gutil.log(gutil.colors.green("Stopped Tomcat with " + ret.status));
             done();
         },
@@ -211,16 +211,17 @@ module.exports = (function() {
         }
     }
 
-    function exec() {
+    function execTomcat() {
         var isWin = /^win/.test(process.platform);
 
         if (isWin) {
-            var args = [ '/c' ];
-            for (var i = 0; i < arguments.length; i++);
-            args[i+1] = arguments[i];
+            var args = [ '/c', tomcatDir + "/bin/catalina.bat" ];
+            for (var i = 0; i < arguments.length; i++) {
+                args[i + 2] = arguments[i];
+            }
             return child_process.spawn(process.env.comspec, args);
         } else {
-            return child_process.spawn(arguments[0], Array.prototype.slice.call(arguments, 1));
+            return child_process.spawn(tomcatDir + "/bin/catalina.sh", Array.prototype.slice.call(arguments));
         }
     }
 
