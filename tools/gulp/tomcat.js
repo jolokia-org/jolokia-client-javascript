@@ -49,7 +49,7 @@ module.exports = (function() {
 
         stop: function (done) {
             var ret = execTomcat("stop", "1", "-force");
-            gutil.log(gutil.colors.green("Stopped Tomcat with " + ret.status));
+            gutil.log(gutil.colors.green("Stopped Tomcat"));
             done();
         },
 

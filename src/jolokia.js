@@ -174,7 +174,7 @@
                 var opts = mergeInDefaults(params);
                 assertNotNull(opts.url, "No URL given");
 
-                var ajaxParams = {};
+                var ajaxParams = { };
 
                 // Copy over direct params for the jQuery ajax call
                 each(["username", "password", "timeout"], function (i, key) {
@@ -246,7 +246,7 @@
                 } else {
                     // Synchronous operation requested (i.e. no callbacks provided)
                     if (opts.jsonp) {
-                        throw Error("JSONP is not supported for synchronous requests");
+                        throw "JSONP is not supported for synchronous requests";
                     }
                     ajaxParams.async = false;
                     var xhr = $.ajax(ajaxParams);
@@ -406,61 +406,135 @@
             // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // Notification handling
 
-            jolokia.addNotificationListener = function(opts, callback) {
+            /**
+             * Listen on JMX notifications.
+             *
+             * A JMX notification is emitted by a specific MBean and has a certain type. In order to listen
+             * to notifications the MBean's object name must be specified. One or more filters on the
+             * notification types can be added; they can contain wildcards, too. For more details about
+             * the filter used please refer to
+             * https://docs.oracle.com/javase/7/docs/api/javax/management/NotificationFilterSupport.html#enableType(java.lang.String)
+             *
+             * The first arguments specifies the notification parameters:
+             *
+             * <dl>
+             *  <dt>mbean</dt>
+             *  <dd>
+             *      Name of the MBean on which to register for the notification (mandatory)
+             *  </dd>
+             *
+             *  <dt>mode</dt>
+             *  <dd>
+             *      Backend mode to use which can be either "pull" for pull notification or "sse" for Server Sent
+             *      Events. Depending on which modes the agent supports different modes can be chosen.
+             *
+             *      If the mode is not given an automatic algorithm determines the best mode:
+             *      <ul>
+             *          <li>
+             *              If the agent supports "sse" and the client supports SSE (i.e. everyone except IE), then
+             *              choose SSE since this is the technically best choice with the lowest latency
+             *          </li>
+             *          <li>
+             *              If the agents supports "pull", choose pull mode. The pull mode uses the scheduler and,
+             *              if not running, starts it with a period of 5 seconds. This can be changed by restarting it
+             *              with a different interval.
+             *          </li>
+             *          <li>
+             *              Throw an error.
+             *          </li>
+             *      </ul>
+             *  </dd>
+             *
+             *  <dt>filter</dt>
+             *  <dd>
+             *      One (string) or many (array) filter which apply on the notification type.
+             *      E.g. a filter "my_example.*" will register for notifications whose type start with "my_example.".
+             *      If more than one filter is provided as an array then notifications passing any filters
+             *      will be delivered.
+             *  </dd>
+             *
+             *  <dt>handback</dt>
+             *  <dd>
+             *      A JSON object which is delivered back to the notification listener when a notification arrives.
+             *  </dd>
+             *
+             *  <dt>config</dt>
+             *  <dd>
+             *      Extra configuration specific to a certain backend which was selected with the <code>mode</code>.
+             *      This is currently not used.
+             *  </dd>
+             * </dl>
+             *
+             * @param opts options specifying the notification mbean
+             * @param callback the callback to call when a notification happens
+             * @param done function callback to call asynchronously when registration has finished
+             * @return handle of this notification which can be used to deregister later with {@see #offNotifcation()}.
+             */
+            jolokia.onNotification = function(opts, callback, done) {
                 // Check that client is registered
-                ensureNotificationRegistration();
+                ensureNotificationRegistration(function() {
 
-                // Notification mode. Typically "pull" or "sse"
-                var mode = extractNotificationMode(opts);
-                notificationHandlerFunc("lazyInit",mode)(
-                  function() {
-                      // Add a notification request
-                      var resp = jolokia.request({
-                          type:     "notification",
-                          command:  "add",
-                          mode:     mode,
-                          client:   client.id,
-                          mbean:    opts.mbean,
-                          filter:   opts.filter,
-                          config:   opts.config,
-                          handback: opts.handback
+                    // Notification mode. Typically "pull" or "sse"
+                    var mode = extractNotificationMode(opts);
+                    notificationHandlerFunc("lazyInit", mode)(
+                      function () {
+                          // Add a notification request
+                          jolokia.request({
+                              method:   "post",
+                              type:     "notification",
+                              command:  "add",
+                              mode:     mode,
+                              client:   client.id,
+                              mbean:    opts.mbean,
+                              filter:   opts.filter,
+                              config:   opts.config,
+                              handback: opts.handback
+                          },{
+                              error: function(resp) {
+                                  throw "Cannot not add notification subscription for " + opts.mbean +
+                                        " (client: " + client.id + "): " + resp.error;
+                              },
+                              success: function(resp) {
+                                  var handle = {
+                                      id: resp.value,
+                                      mode: mode
+                                  };
+                                  notificationHandlerFunc("add", mode)(handle, opts, callback);
+                                  if (done) {
+                                      done(handle);
+                                  }
+                              }
+                          });
                       });
-                      if (Jolokia.isError(resp)) {
-                          throw new Error("Cannot not add notification subscription for " + opts.mbean +
-                                          " (client: " + client.id + "): " + resp.error);
-                      }
-                      var handle = {id: resp.value, mode: mode};
-                      notificationHandlerFunc("add", mode)(handle, opts);
-                      if (callback) {
-                          callback(handle);
-                      }
-                  });
+                });
             };
 
-            jolokia.removeNotificationListener = function(handle) {
+            jolokia.offNotification = function(handle, done) {
                 notificationHandlerFunc("remove",handle.mode)(handle);
                 // Unregister notification
                 jolokia.request({
+                    method: "post",
                     type:    "notification",
                     command: "remove",
                     client:  client.id,
                     handle:  handle.id
+                },{
+                    success: function() {
+                        done && done();
+                    },
+                    error: function(resp) {
+                        console.error("Cannot unregister notification " + handle + ": " + resp.error);
+                    }
                 });
             };
 
-            jolokia.unregisterNotificationClient = function() {
-                var backends = client.backend || {};
-                for (var mode in NOTIFICATION_HANDLERS) {
-                    if (NOTIFICATION_HANDLERS.hasOwnProperty(mode) && backends[mode]) {
-                        notificationHandlerFunc("unregister",mode)()
-                    }
-                }
 
-                jolokia.request({
-                    type:    "notification",
-                    command: "unregister",
-                    client: client.id
-                });
+            // ===================================================================
+            // Lifecycle method
+
+            jolokia.destroy = function() {
+                jolokia.stop();
+                unregisterNotificationClient();
             };
 
             // ===================================================================
@@ -478,20 +552,52 @@
                 return idx;
             }
 
+            // Unregister a notification client
+            function unregisterNotificationClient(done) {
+                if (client) {
+                    var backends = client.backend || {};
+                    for (var mode in NOTIFICATION_HANDLERS) {
+                        if (NOTIFICATION_HANDLERS.hasOwnProperty(mode) && backends[mode]) {
+                            notificationHandlerFunc("unregister", mode)()
+                        }
+                    }
+
+                    jolokia.request({
+                        type:    "notification",
+                        command: "unregister",
+                        client:  client.id
+                    }, {
+                        success: function() {
+                            done && done();
+                        },
+                        error: function(resp) {
+                            console.error("Cannot unregister notification client " + client.id + ": " + resp.error);
+                        }
+                    });
+                }
+            };
+
+
             // Check that this agent is registered as a notification client.
             // If not, do a register call
-            function ensureNotificationRegistration() {
+            function ensureNotificationRegistration(done) {
                 if (!client) {
-                    var resp = jolokia.request({
+                    jolokia.request({
+                        method: "post",
                         type:    "notification",
                         command: "register"
+                    },{
+                        success: function(resp) {
+                            client = resp.value;
+                            done();
+                        },
+                        error: function(resp) {
+                            console.error("Can not register client for notifications: " + resp.error +
+                                            "\nTrace:\n" + resp.stacktrace);
+                        }
                     });
-                    if (Jolokia.isError(resp)) {
-                        throw new Error("Can not register client for notifications: " + resp.error +
-                                        "\nTrace:\n" + resp.stacktrace);
-                    } else {
-                        client = resp.value;
-                    }
+                } else {
+                    done();
                 }
             }
 
@@ -502,15 +608,15 @@
                 // A mode given takes precedence
                 var mode = opts.mode;
                 if (!mode) {
-                    // Try 'sse' first as default then 'pull'.
-                    mode = backends["sse"] ? "sse" : (backends["pull"] ? "pull" : undefined);
+                    // Try 'sse' first as default (if SSE is supported by this browser), then 'pull'.
+                    mode = backends["sse"] && EventSource ? "sse" : (backends["pull"] ? "pull" : undefined);
                     // If only one backend is configured, that's the default
                     if (!mode && backends.length == 1) {
                         return backends[0];
                     }
                 }
                 if (!mode || !backends[mode]) {
-                    throw new Error("Notification mode must be one of " + Object.keys(backends) + (mode ? " and not " + mode : ""));
+                    throw "Notification mode must be one of " + Object.keys(backends) + (mode ? " and not " + mode : "");
                 }
                 return mode
             }
@@ -520,7 +626,7 @@
             function notificationHandlerFunc(what, mode) {
                 var notifHandler = NOTIFICATION_HANDLERS[mode];
                 if (!notifHandler) {
-                    throw new Error("Unsupported notification mode '" + mode + "'");
+                    throw "Unsupported notification mode '" + mode + "'";
                 }
                 return function() {
                     // Fix 'this' context to the notifHandler object which holds some state objects
@@ -535,16 +641,20 @@
                 pull : {
                     // Pull doesn't need any initialization
                     lazyInit: function(callback) {
+                        if (!jolokia.isRunning()) {
+                            // Check every 5 seconds
+                            jolokia.start(5000);
+                        }
                         callback && callback();
                     },
-                    add: function(handle, opts) {
+                    add: function(handle, opts, callback) {
                         // Add a job for periodically fetching the value and calling the callback with the response
                         var job = {
                             callback: function (resp) {
                                 if (!Jolokia.isError(resp)) {
                                     var notifs = resp.value;
                                     if (notifs && notifs.notifications && notifs.notifications.length > 0) {
-                                        opts.callback(notifs);
+                                        callback(notifs);
                                     }
                                 }
                             },
@@ -598,14 +708,10 @@
                                 console.log("Error: " + event);
                                 console.dir(event);
                             };
-                            this.eventSource.onmessage = function(event) {
-                                console.log("Message: " + event);
-                                console.dir(event);
-                            };
                         }
                     },
-                    add: function(handle, opts) {
-                        this.dispatchMap[handle.id] = opts.callback;
+                    add: function(handle, opts, callback) {
+                        this.dispatchMap[handle.id] = callback;
                     },
                     remove: function(handle) {
                         delete this.dispatchMap[handle.id];
@@ -631,9 +737,6 @@
                 }
             };
         }
-
-        // ========================================================================
-        // Private Functions:
 
         // Create a function called by a timer, which requests the registered requests
         // calling the stored callback on receipt. jolokia and jobs are put into the closure
@@ -785,16 +888,16 @@
             if (methodGiven) {
                 if (methodGiven === "get") {
                     if (isArray(request)) {
-                        throw new Error("Cannot use GET with bulk requests");
+                        throw "Cannot use GET with bulk requests";
                     }
                     if (request.type.toLowerCase() === "read" && isArray(request.attribute)) {
-                        throw new Error("Cannot use GET for read with multiple attributes");
+                        throw "Cannot use GET for read with multiple attributes";
                     }
                     if (request.target) {
-                        throw new Error("Cannot use GET request with proxy mode");
+                        throw "Cannot use GET request with proxy mode";
                     }
                     if (request.config) {
-                        throw new Error("Cannot use GET with request specific config");
+                        throw "Cannot use GET with request specific config";
                     }
                 }
                 method = methodGiven;
@@ -807,7 +910,7 @@
                         "post" : "get";
             }
             if (opts.jsonp && method === "post") {
-                throw new Error("Can not use JSONP with POST requests");
+                throw "Can not use JSONP with POST requests";
             }
             return method;
         }
@@ -923,7 +1026,7 @@
                     case "ping":
                         return { parts: [ "ping", request.client ]};
                 }
-                throw new Error("Unknown command '" + request.command + "'");
+                throw "Unknown command '" + request.command + "'";
             }
         };
 
@@ -1001,7 +1104,7 @@
 
         function assertNotNull(object, message) {
             if (object == null) {
-                throw new Error(message);
+                throw message;
             }
         }
 

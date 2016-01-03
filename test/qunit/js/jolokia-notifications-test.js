@@ -30,8 +30,7 @@ $(document).ready(function () {
 
     QUnit.moduleDone(function(details) {
         if (details.name === "Notifications") {
-            j4p.unregisterNotificationClient();
-            j4p.stop();
+            j4p.destroy();
         }
     });
 
@@ -41,24 +40,25 @@ $(document).ready(function () {
         // Register listener
         var handle;
 
-        j4p.addNotificationListener({
-            mode: mode,
-            mbean: "jolokia.it:type=Chat",
-            callback: function(notifs) {
-                equal(notifs.notifications.length,1,"One notification received");
-                var data = notifs.notifications[0].userData;
-                equal(data.user,"roland","User name");
-                equal(data.message,"jolokia rocks!","Message");
+        j4p.onNotification({
+            mode:  mode,
+            mbean: "jolokia.it:type=Chat"
+        }, function(notifs) {
+            equal(notifs.notifications.length,1,"One notification received");
+            var data = notifs.notifications[0].userData;
+            equal(data.user,"roland","User name");
+            equal(data.message,"jolokia rocks!","Message");
 
-                // Unregister listener
-                j4p.removeNotificationListener(handle);
-                done();
-            }
+            // Unregister listener
+            j4p.offNotification(handle);
+            done();
         }, function(h) {
             handle = h;
             // Call MBean
-            j4p.execute("jolokia.it:type=Chat","message","roland","jolokia rocks!");
+            j4p.execute("jolokia.it:type=Chat","message","roland","jolokia rocks!", {
+                // Make it async
+                success: function() {}
+            });
         });
     }
-
 });
