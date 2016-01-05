@@ -11,7 +11,7 @@
   <!-- load Ink's CSS -->
   <link rel="stylesheet" type="text/css" href="../assets/css/ink-flex.min.css">
   <link rel="stylesheet" type="text/css" href="../assets/css/font-awesome.min.css">
-
+  <link rel="stylesheet" type="text/css" href="../assets/css/prism.css">
   <!-- load Ink's CSS for IE8 -->
   <!--[if lt IE 9 ]>
   <link rel="stylesheet" href="../assets/css/ink-ie.min.css" type="text/css" media="screen" title="no title"
@@ -20,6 +20,7 @@
 
   <!-- test browser flexbox support and load legacy grid if unsupported -->
   <script type="text/javascript" src="../assets/js/modernizr.js"></script>
+  <script type="text/javascript" src="../assets/js/prism.js"></script>
   <script type="text/javascript">
     Modernizr.load({
       test: Modernizr.flexbox,
@@ -69,32 +70,36 @@
   <div class="column-group push-center gutters">
 
     <!-- Pull / SSE Mode -->
-    <div class="all-30">
-      <div class="ink-dropdown" data-target="#mode-dropdown" data-dismiss-on-inside-click="true">
-
+    <div class="all-25">
+      <div class="ink-dropdown  ink-tooltip" data-target="#mode-dropdown" data-dismiss-on-inside-click="true"
+           data-tip-html="Notification mode: <ul><li><strong>Pull</strong> for notifications every 5 seconds</li><li><strong>SSE</strong> for Server Side Events</li></ul>"
+           data-tip-delay="2.0"
+           data-tip-fade="1.0"
+           data-tip-color="black"
+           data-tip-where="right">
         <button
-            data-tip-html="Notification mode: <ul><li><strong>Pull</strong> for notifications every 5 seconds</li><li><strong>SSE</strong> for Server Side Events</li></ul>"
-            data-tip-delay="2.0"
-            data-tip-fade="1.0"
-            data-tip-color="black"
-            data-tip-where="right"
             id="mode-button"
-            class="ink-button blue align-right ink-tooltip"><strong>Pull</strong> Mode</button>
+            class="ink-button blue align-right"><strong>Pull</strong> Mode</button>
         <ul id="mode-dropdown" class="align-right dropdown-menu">
           <li id="pull-mode-button"><a href="#"><strong>Pull</strong> Mode</a></li>
           <li id="sse-mode-button"><a href="#"><strong>SSE</strong> Mode</a></li>
         </ul>
       </div>
     </div>
-    <div class="all-70">
+    <div class="all-15">
       <button class="ink-button" onclick="window.open(window.location, '_blank', 'toolbars=0,width=700,height=500,left=200,top=200,scrollbars=1,resizable=1');">New Window</button>
+    </div>
+    <div class="all-60 align-right">
+      <button class="ink-button black" id="mbean-source-trigger">
+        ChatMBean<i style="margin-left: 10px" class="fa fa-file-code-o"></i></button>
+      <button class="ink-button black" id="javascript-source-trigger">JavaScript<i style="margin-left: 10px" class="fa fa-file-code-o"></i></button>
     </div>
   </div>
 
   <!-- Input form for messages -->
   <form class="ink-form" >
     <div class="column-group gutters">
-      <div class="control-group all-30">
+      <div class="control-group all-25">
         <div class="control">
           <p data-tip-text="Username to identify yourself"
               data-tip-delay="1.0"
@@ -105,7 +110,7 @@
           <input type="text" name="Name" id="name" placeholder="Who are you ?">
         </div>
       </div>
-      <div class="control-group all-70">
+      <div class="control-group all-75">
         <p data-tip-text="Say what you want. Be polite as always :)"
                 data-tip-delay="1.0"
                 data-tip-fade="1.0"
@@ -146,6 +151,155 @@
   </div>
 </div>
 
+<div class="ink-shade fade">
+    <div id="mbean-source" class="ink-modal fade" data-trigger="#mbean-source-trigger"
+         data-width="80%" data-height="90%" role="dialog" aria-hidden="true" aria-labelled-by="modal-title-jmx">
+        <div class="modal-header">
+            <button class="modal-close ink-dismiss"></button>
+            <h2 id="modal-title-jmx">ChatMBean</h2>
+        </div>
+        <div class="modal-body" id="modalContent">
+          <p>
+          The server part of this demo consists of a single MBean <a href="https://github.com/rhuss/jolokia/blob/2.0/it/core/src/main/java/org/jolokia/it/core/notification/Chat.java">
+          <code>ChatMBean</code></a> which is registered under the Objectname <strong>jolokia.it:type=Chat</strong>.
+            This MBean extends <a href="https://docs.oracle.com/javase/7/docs/api/javax/management/NotificationBroadcasterSupport.html">NotificationBroadcasterSupport</a> and uses its <strong><code>sendNotifcation()</code></strong> to distribute
+            the notification.
+          </p>
+          <p>
+            The single exposed JMX operation is <strong><code>void message(String user, String text)</code></strong>
+            which creates and sends the notification.
+          </p>
+          <pre><code class="language-java">public class Chat extends NotificationBroadcasterSupport implements ChatMBean  {
+
+  // Sequence number uniquely identifying a notification
+  private AtomicInteger seqNumber = new AtomicInteger();
+
+  /**
+   * Constructor preparing the meta data for the base class
+   * {@link NotificationBroadcasterSupport}.
+   *
+   * @throws MalformedObjectNameException
+   */
+  public Chat() throws MalformedObjectNameException {
+      super(new MBeanNotificationInfo(
+              new String[] {"jolokia.chat"},
+              Notification.class.getName(),
+              "Chat notification"));
+  }
+
+  /**
+   * JMX exposed operation for dispatching a message to all registered
+   * notification listeners. This is the only method defined in the standard-MBean
+   * interface {@link ChatMBean}.
+   *
+   * @param who who is sending the message
+   * @param message the message itself
+   */
+  public void message(String who, String message) {
+      // Create notification
+      Notification notification =
+              new Notification("jolokia.chat", this, seqNumber.getAndIncrement());
+
+      // Prepare and set payload for listeners
+      Map&lt;String,String> data = new HashMap&lt;String, String>();
+      data.put("user",who);
+      data.put("message",message);
+      notification.setUserData(data);
+
+      // Fire notification to all listeners
+      sendNotification(notification);
+  }
+}</code></pre>
+        </div>
+        <div class="modal-footer">
+            <div class="push-right">
+                <!-- Anything with the ink-dismiss class will close the modal -->
+                <button class="ink-button caution ink-dismiss">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="ink-shade fade">
+    <div id="javascript-source" class="ink-modal fade" data-trigger="#javascript-source-trigger"
+         data-width="80%" data-height="90%" role="dialog" aria-hidden="true" aria-labelled-by="modal-title-js">
+        <div class="modal-header">
+            <button class="modal-close ink-dismiss"></button>
+            <h2 id="modal-title-js">Client JavaScript</h2>
+        </div>
+        <div class="modal-body" id="modalContentJs">
+          <p>
+            The following snippet shows how to handle JMX notifications on the client side. First the Jolokia client
+            object <code>jolokia</code> is created. Then, a listener is connected for the notifications emitted by the
+            MBean registered a <strong>jolokia.it:type=Chat</strong>. Finally the method <code>submitMessage()</code>, which is connected to the message input field, execute the operation <code>message()</code> on the MBean
+            <strong>jolokia.it=type=Chat</strong> which in turn triggers the notification event.
+          </p>
+          <p>
+            Refer to the source of the <code>ChatMBean</code> for more details.
+          </p>
+          <pre><code class="language-javascript">// Create the Jolokia client object
+var jolokia = new Jolokia("http://localhost:8080/jolokia");
+
+/*
+ * Register JMX notification listener. "mode" is taken from the pull-down menu
+ * an can be either "pull" or "sse".
+ *
+ * First argument holds the arguments for registering the notification
+ * (MBean name, optional a filter,...), the second argument it the listener
+ * function to be called when a notification arrives. The third argument,
+ * if given, is called after the registration is finished.
+ */
+function startJolokia(mode) {
+  jolokia.onNotification({
+    mode:  mode,
+    mbean: "jolokia.it:type=Chat"
+  }, function(notifs) {
+    // For each notification receiveed append them as rows to the message table.
+    // The background color is calculated based on the hashsum of the user name.
+    $.each(notifs.notifications,function(i,notif) {
+      var d = notif.userData;
+      $("#message-table").append("&lt;tr class='" + bgColor(d.user) + "'>" +
+                                 "&lt;td>" + (Date.now() - notif.timeStamp) + "&lt;/td>" +
+                                 "&lt;td>" + mode.toUpperCase() + "&lt;/td>" +
+                                 "&lt;td>" + d.user + "&lt;/td>" +
+                                 "&lt;td>" + d.message + "&lt;/td>" +
+                                 "&lt;/tr>");
+    });
+  }, function() {
+    // Start the scheduler with a poll interval of 5 seconds after the listener is registered
+    jolokia.start(5000);
+  });
+}
+
+/*
+ * Function called when a message is submitted, either by pressing return or sending it via the
+ * envelope button.
+ */
+function submitMessage() {
+  // Extract user and message from the text input fields
+  var user = $.trim($('#name').val()) || "(unknown)";
+  var msg = $('#message');
+
+  // Execute a JMX operation asynchronously via jolokia.execute. The arguments are the
+  // user and the message to send
+  jolokia.execute("jolokia.it:type=Chat", "message", user, msg.val(),{
+    success : function() {
+      // Set the message field to an empty value after the message has been transmitted.
+      msg.val("");
+    }
+  });
+}</code></pre>
+        </div>
+        <div class="modal-footer">
+            <div class="push-right">
+                <!-- Anything with the ink-dismiss class will close the modal -->
+                <button class="ink-button caution ink-dismiss">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
 
   $(function () {
@@ -161,26 +315,37 @@
 
     // ===========================================================================================
 
+    /*
+     * Register JMX notification listener. "mode" is taken from the pull-down menu
+     * an can be either "pull" or "sse".
+     *
+     * First argument holds the arguments for registering the notification (MBean name, optional a filter,...),
+     * the second argument it the listener function to be called when a notification arrives. The third argument,
+     * if given, is called after the registration is finished.
+     */
     function startJolokia(mode) {
       jolokia = new Jolokia(url);
       jolokia.onNotification({
         mode:  mode,
         mbean: "jolokia.it:type=Chat"
       }, function(notifs) {
-          $.each(notifs.notifications,function(i,notif) {
-            var d = notif.userData;
-            $("#message-table").append("<tr class='" + bgColor(d.user) + "'>" +
-                                       "<td>" + (Date.now() - d.timestamp) + "</td>" +
-                                       "<td>" + mode.toUpperCase() + "</td>" +
-                                       "<td>" + d.user + "</td>" +
-                                       "<td>" + d.message + "</td>" +
-                                       "</tr>");
-          });
+        // For each notification receiveed append them as rows to the message table. The background
+        // color is calculated based on the hashsum of the user name.
+        $.each(notifs.notifications,function(i,notif) {
+          var d = notif.userData;
+          $("#message-table").append("<tr class='" + bgColor(d.user) + "'>" +
+                                     "<td>" + (Date.now() - notif.timeStamp) + "</td>" +
+                                     "<td>" + mode.toUpperCase() + "</td>" +
+                                     "<td>" + d.user + "</td>" +
+                                     "<td>" + d.message + "</td>" +
+                                     "</tr>");
+        });
       }, function() {
+        // Start the scheduler with a poll interval of 5 seconds after the registration has finished.
         jolokia.start(5000);
       });
     }
-    
+
     var COLORS = [ "red", "green", "blue", "orange", "grey", "black", "yellow" ];
 
     function bgColor(val) {
@@ -239,12 +404,21 @@
       });
     }
 
+    /*
+     * Function called when a message is submitted, either by pressing return or sending it via the
+     * envelope button.
+     */
     function submitMessage() {
+      // Extract user and message from the text input fields
       var user = $.trim($('#name').val()) || "(unknown)";
       var msg = $('#message');
+
+      // Execute a JMX operation asynchronously via jolokia.execute. The arguments are the
+      // user and the message to send
       jolokia.execute("jolokia.it:type=Chat", "message", user, msg.val(),{
         success : function() {
-          $("#message-input").fadeOut(100,function() {
+          // Set the message field to an empty value after the message has been transmitted.
+          $("#message-input").fadeOut(100, function() {
             msg.val("");
             $("#message-input").fadeIn(100);
           });
