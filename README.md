@@ -70,7 +70,7 @@ new notification support).
 ### The new one ...
 
 This here is the new location of the [Jolokia](https://www.jolokia.org)
-2.0. JavaScript client, which for the 1.x series is part of Jolokia
+2.0 JavaScript client. For the 1.x series it is part of Jolokia
 itself. The most up-to-date documentation can still be found in the
 [Jolokia Reference Manual](https://jolokia.org/reference/html/clients.html#client-javascript)
 but will gradually be moved to this repository. 

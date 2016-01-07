@@ -3,6 +3,6 @@ machine:
     version: 5.1.0
 test:
   override:
-    - gulp test --pollInterval=2000
     - gulp test --jvmAgent --pollInterval=2000
+    - gulp test --pollInterval=2000
 
