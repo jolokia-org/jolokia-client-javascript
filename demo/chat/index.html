@@ -226,7 +226,7 @@
          data-width="80%" data-height="90%" role="dialog" aria-hidden="true" aria-labelled-by="modal-title-js">
         <div class="modal-header">
             <button class="modal-close ink-dismiss"></button>
-            <h2 id="modal-title-js">Client JavaScript</h2>
+            <h2 id="modal-title-js">JavaScript Client</h2>
         </div>
         <div class="modal-body" id="modalContentJs">
           <p>
@@ -248,7 +248,7 @@ var jolokia = new Jolokia("http://localhost:8080/jolokia");
  * First argument holds the arguments for registering the notification
  * (MBean name, optional a filter,...), the second argument it the listener
  * function to be called when a notification arrives. The third argument,
- * if given, is called after the registration is finished.
+ * if given, is called after the registration has finished.
  */
 function startJolokia(mode) {
   jolokia.onNotification({
@@ -267,7 +267,7 @@ function startJolokia(mode) {
                                  "&lt;/tr>");
     });
   }, function() {
-    // Start the scheduler with a poll interval of 5 seconds after the listener is registered
+    // Start the scheduler with a poll interval of 5 seconds after the listener has been added.
     jolokia.start(5000);
   });
 }
@@ -321,7 +321,7 @@ function submitMessage() {
      *
      * First argument holds the arguments for registering the notification (MBean name, optional a filter,...),
      * the second argument it the listener function to be called when a notification arrives. The third argument,
-     * if given, is called after the registration is finished.
+     * if given, is called after the registration has finished.
      */
     function startJolokia(mode) {
       jolokia = new Jolokia(url);

@@ -17,7 +17,7 @@ var gulp = require('gulp'),
 var buildDir = "build";
 var scripts = "src/*.js";
 
-var JOLOKIA_VERSION = "2.0.0-SNAPSHOT";
+var JOLOKIA_VERSION = "2.0.0-M1";
 
 var DEFAULT_SUPPORT_LIB="jquery-1";
 var SUPPORT_LIB_MAP = {
