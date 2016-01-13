@@ -16,6 +16,9 @@
     "jolokia-it": "2.0.0-SNAPSHOT",
     "tomcat": "8.0.30"
   },
+  "scripts": { 
+    "gulp": "gulp"
+  },
   "license": "Apache-2.0",
   "devDependencies": {
     "del": "^2.2.0",
