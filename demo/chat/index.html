@@ -233,7 +233,7 @@
             The following snippet shows how to handle JMX notifications on the client side. First the Jolokia client
             object <code>jolokia</code> is created. Then, a listener is connected for the notifications emitted by the
             MBean registered a <strong>jolokia.it:type=Chat</strong>. Finally the method <code>submitMessage()</code>, which is connected to the message input field, execute the operation <code>message()</code> on the MBean
-            <strong>jolokia.it=type=Chat</strong> which in turn triggers the notification event.
+            <strong>jolokia.it:type=Chat</strong> which in turn triggers the notification event.
           </p>
           <p>
             Refer to the source of the <code>ChatMBean</code> for more details.
@@ -265,6 +265,7 @@ function startJolokia(mode) {
                                  "&lt;td>" + d.user + "&lt;/td>" +
                                  "&lt;td>" + d.message + "&lt;/td>" +
                                  "&lt;/tr>");
+      window.scrollTo(0,document.body.scrollHeight);
     });
   }, function() {
     // Start the scheduler with a poll interval of 5 seconds after the listener has been added.
