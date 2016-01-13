@@ -265,7 +265,6 @@ function startJolokia(mode) {
                                  "&lt;td>" + d.user + "&lt;/td>" +
                                  "&lt;td>" + d.message + "&lt;/td>" +
                                  "&lt;/tr>");
-      window.scrollTo(0,document.body.scrollHeight);
     });
   }, function() {
     // Start the scheduler with a poll interval of 5 seconds after the listener has been added.
@@ -340,6 +339,7 @@ function submitMessage() {
                                      "<td>" + d.user + "</td>" +
                                      "<td>" + d.message + "</td>" +
                                      "</tr>");
+          window.scrollTo(0,document.body.scrollHeight);
         });
       }, function() {
         // Start the scheduler with a poll interval of 5 seconds after the registration has finished.
