@@ -61,6 +61,11 @@ module.exports = (function() {
                 var req = http.request(tomcatUrl);
                 req.on("response",  function(response) {
                     createProgressBar('apache-tomcat-' + p.testVersions.tomcat,response);
+                    if (response.statusCode != 200) {
+                        gutil.log(gutil.colors.red("Got HTTP error while fetching " + tomcatUrl + " : "
+                                                   + response.statusCode + " - " + response.statusMessage));
+                        done();
+                    }
                     response
                       .on('end', function () {
                           addStaticContent(tomcatDir + "/conf/server.xml",path.resolve(__dirname + "/../.."));
