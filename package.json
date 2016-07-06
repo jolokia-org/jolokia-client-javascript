@@ -14,7 +14,7 @@
   "testVersions": {
     "jolokia": "2.0.0-SNAPSHOT",
     "jolokia-it": "2.0.0-SNAPSHOT",
-    "tomcat": "8.0.33"
+    "tomcat": "8.0.36"
   },
   "scripts": { 
     "gulp": "gulp"
