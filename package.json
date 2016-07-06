@@ -1,7 +1,7 @@
 {
   "name": "jolokia",
   "version": "2.0.0-SNAPSHOT",
-  "description": "JavaScript Clien for Jolokia (http://www.jolokia.org)",
+  "description": "JavaScript Client for Jolokia (http://www.jolokia.org)",
   "homepage": "http://www.jolokia.org",
   "author": {
     "name": "Roland Huss",
