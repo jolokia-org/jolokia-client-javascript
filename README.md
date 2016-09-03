@@ -42,7 +42,7 @@ Option           | Description
 Examples:
 
 ```
-# Run whol test suite with the Jolokia WAR agent
+# Run whole test suite with the Jolokia WAR agent
 gulp test
 
 # Tests with the JVM agent
